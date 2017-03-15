@@ -6,6 +6,8 @@ var app         = express();
 var bodyParser  = require('body-parser');
 var morgan      = require('morgan');
 var mongoose    = require('mongoose');
+var cors		= require('cors');
+app.use(cors());
 
 var jwt    = require('jsonwebtoken'); // used to create, sign, and verify tokens
 var config = require('./config'); // get our config file
@@ -32,8 +34,8 @@ app.get('/setup', function(req, res) {
 
 	// create a sample user
 	var nick = new User({ 
-		name: 'Nick Cerminara', 
-		password: 'password',
+		name: 'fulano', 
+		password: 'fulano',
 		admin: true 
 	});
 	nick.save(function(err) {

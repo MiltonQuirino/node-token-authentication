@@ -1,6 +1,6 @@
 module.exports = {
 
-	'secret': 'ilovescotchyscotch',
-	'database': 'mongodb://noder:noderauth@proximus.modulusmongo.net:27017/so9pojyN'
+	'secret': 'usersjwt',
+	'database': 'mongodb://eronalves:usersjwt@ds015508.mlab.com:15508/users-jwt-test'
 
 };
