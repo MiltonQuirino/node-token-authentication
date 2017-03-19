@@ -7,11 +7,13 @@ var bodyParser  = require('body-parser');
 var morgan      = require('morgan');
 var mongoose    = require('mongoose');
 var cors		= require('cors');
+var uuidV4 = require('uuid/v4');
 app.use(cors());
 
 var jwt    = require('jsonwebtoken'); // used to create, sign, and verify tokens
 var config = require('./config'); // get our config file
 var User   = require('./app/models/user'); // get our mongoose model
+var GrupoRamo = require('./app/models/grupo-ramo'); // get our mongoose model
 
 // =================================================================
 // configuration ===================================================
@@ -27,6 +29,8 @@ app.use(bodyParser.json());
 // use morgan to log requests to the console
 app.use(morgan('dev'));
 
+var idGrupo = 0;
+
 // =================================================================
 // routes ==========================================================
 // =================================================================
@@ -34,8 +38,9 @@ app.get('/setup', function(req, res) {
 
 	// create a sample user
 	var nick = new User({ 
-		name: 'fulano', 
-		password: 'fulano',
+		nome: 'fulano', 
+		senha: 'fulano',
+		email: 'fulano@fulano.com',
 		admin: true 
 	});
 	nick.save(function(err) {
@@ -45,6 +50,55 @@ app.get('/setup', function(req, res) {
 		res.json({ success: true });
 	});
 });
+
+app.get('/setup/grupo-ramo', function (req, res) {
+	var grupos = [];
+
+	grupos.push(createGrupoRamo(getId(), 1, 'Patrimonial', 'PATR'));
+	grupos.push(createGrupoRamo(getId(), 2, 'Riscos Especiais', 'RIESP'));
+	grupos.push(createGrupoRamo(getId(), 3, 'Responsabilidades', 'RESP'));
+	grupos.push(createGrupoRamo(getId(), 5, 'Automóvel', 'AUTO'));
+	grupos.push(createGrupoRamo(getId(), 6, 'Transportes', 'TRANSP'));
+	grupos.push(createGrupoRamo(getId(), 7, 'Riscos Financeiros', 'RISFINAN'));
+	grupos.push(createGrupoRamo(getId(), 10, 'Habitacional', 'HABIT'));
+
+	saveList(grupos);	
+	
+	res.json({ success: true });
+});
+
+function getId() {
+	return idGrupo++;
+}
+
+function createGrupoRamo(id, codigo, nome, apelido) {
+	return new GrupoRamo({
+		id: id, 
+		criadoEm: new Date(), 
+		atualizadoEm: new Date(),
+		codigo: codigo,
+		nome: nome,
+		apelido: apelido,
+		guid: uuidV4()
+	});
+}
+
+function saveList(objects) {
+	var object = objects.pop();
+
+	if (object) {
+		object.save(function(err) {
+			if (err) throw err;
+
+			console.log('Object saved successfully');
+			saveList(objects);
+		});
+	}
+}
+
+function saveAllMongoose(objects) {
+
+}
 
 // basic route (http://localhost:8080)
 app.get('/', function(req, res) {
@@ -62,11 +116,13 @@ var apiRoutes = express.Router();
 // http://localhost:8080/api/authenticate
 apiRoutes.post('/authenticate', function(req, res) {
 
+console.log("body da request!!1 123", req.body);
 	// find the user
 	User.findOne({
-		name: req.body.name
+		email: req.body.email
 	}, function(err, user) {
 
+		console.log(err);
 		if (err) throw err;
 
 		if (!user) {
@@ -74,7 +130,10 @@ apiRoutes.post('/authenticate', function(req, res) {
 		} else if (user) {
 
 			// check if password matches
-			if (user.password != req.body.password) {
+			console.log('UserFound:', user);
+			console.log('ReqUser:', req.body);
+		
+			if (user.senha !== req.body.senha) {
 				res.json({ success: false, message: 'Authentication failed. Wrong password.' });
 			} else {
 
@@ -87,7 +146,11 @@ apiRoutes.post('/authenticate', function(req, res) {
 				res.json({
 					success: true,
 					message: 'Enjoy your token!',
-					token: token
+					usuario: {
+						nome: user.nome,
+						email: user.email,
+						token: token
+					}				
 				});
 			}		
 
@@ -103,7 +166,7 @@ apiRoutes.use(function(req, res, next) {
 
 	// check header or url parameters or post parameters for token
 	var token = req.body.token || req.param('token') || req.headers['x-access-token'];
-
+	
 	// decode token
 	if (token) {
 
@@ -147,6 +210,13 @@ apiRoutes.get('/users', function(req, res) {
 apiRoutes.get('/check', function(req, res) {
 	res.json(req.decoded);
 });
+
+apiRoutes.get('/grupo-seguros', function(req, res) {
+	GrupoRamo.find({}, function(err, grupoSeguros) {
+		res.json(grupoSeguros);
+	});
+});
+
 
 app.use('/api', apiRoutes);
 

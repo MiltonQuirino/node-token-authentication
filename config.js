@@ -1,6 +1,6 @@
 module.exports = {
 
-	'secret': 'yoursecret',
-	'database': 'mongodb://your-bd-url/your-bd'
+	'secret': 'usersjwt',
+	'database': 'mongodb://eronalves:usersjwt@ds015508.mlab.com:15508/users-jwt-test'
 
 };
