@@ -173,7 +173,7 @@ apiRoutes.use(function(req, res, next) {
 		// verifies secret and checks exp
 		jwt.verify(token, app.get('superSecret'), function(err, decoded) {			
 			if (err) {
-				return res.json({ success: false, message: 'Failed to authenticate token.' });		
+				return res.status(401).json({ success: false, message: 'Failed to authenticate token.' });		
 			} else {
 				// if everything is good, save to request for use in other routes
 				req.decoded = decoded;	
@@ -212,9 +212,50 @@ apiRoutes.get('/check', function(req, res) {
 });
 
 apiRoutes.get('/grupo-seguros', function(req, res) {
-	GrupoRamo.find({}, function(err, grupoSeguros) {
+	GrupoRamo.find({}).sort({nome: 1}).exec(function(err, grupoSeguros) {
 		res.json(grupoSeguros);
 	});
+});
+
+apiRoutes.get('/grupo-seguros/:guid', function(req, res) {
+	var guid = req.params.guid;
+	console.log("GUID:", guid);
+	GrupoRamo.findOne({guid: guid}, function(err, grupoSeguros) {
+		res.json(grupoSeguros);
+	});
+});
+
+apiRoutes.put('/grupo-seguros/:guid/editar', function(req, res) {
+	var guid = req.params.guid;
+	console.log("BODY", req.body);
+	var newGrupoSeguros = {
+		codigo: req.body.codigo,
+		nome: req.body.nome,
+		apelido: req.body.apelido,
+		atualizadoEm: new Date()
+	};
+
+	// console.log("OBJETO NOVO:", newGrupoSeguros);
+
+    GrupoRamo.findOne({guid: guid}).then((grupoSeguros) => {
+        return Object.assign(grupoSeguros, newGrupoSeguros);
+    }).then((model) => {
+        return model.save();
+    }).then((updatedModel) => {
+		var model = {
+			guid: updatedModel.guid,
+			codigo: updatedModel.codigo,
+			nome: updatedModel.nome,
+			apelido: updatedModel.apelido
+		};
+		
+        res.json({
+            msg: 'model updated',
+            updatedModel: model
+        });
+    }).catch((err) => {
+        res.send(err);
+    });
 });
 
 
