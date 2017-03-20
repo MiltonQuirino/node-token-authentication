@@ -109,6 +109,7 @@ app.get('/', function(req, res) {
 // get an instance of the router for api routes
 // ---------------------------------------------------------
 var apiRoutes = express.Router(); 
+apiRoutes.use(bodyParser.json());
 
 // ---------------------------------------------------------
 // authentication (no middleware necessary since this isnt authenticated)
@@ -219,13 +220,38 @@ apiRoutes.get('/grupo-seguros', function(req, res) {
 
 apiRoutes.get('/grupo-seguros/:guid', function(req, res) {
 	var guid = req.params.guid;
-	console.log("GUID:", guid);
 	GrupoRamo.findOne({guid: guid}, function(err, grupoSeguros) {
 		res.json(grupoSeguros);
 	});
 });
 
-apiRoutes.put('/grupo-seguros/:guid/editar', function(req, res) {
+apiRoutes.post('/grupo-seguros', function(req, res) {
+	var grupoRamo = createGrupoRamo(getId(), req.body.codigo, req.body.nome, req.body.apelido);
+	grupoRamo.save(function(err) {
+			if (err) throw err;
+
+			console.log('Object saved successfully');
+			res.json({
+            msg: 'model created',
+            createdModel: grupoRamo
+		});
+	});
+});
+
+apiRoutes.delete('/grupo-seguros/:guid', function(req, res) {
+	var guid = req.params.guid;
+
+	GrupoRamo.findOneAndRemove({guid: guid}, function (err) {
+		if (err) throw err;	
+
+		res.json({
+            msg: 'Grupo de seguros excluído',
+			deleted: true       
+		});
+	});
+});
+
+apiRoutes.put('/grupo-seguros/:guid', function(req, res) {
 	var guid = req.params.guid;
 	console.log("BODY", req.body);
 	var newGrupoSeguros = {
@@ -235,24 +261,26 @@ apiRoutes.put('/grupo-seguros/:guid/editar', function(req, res) {
 		atualizadoEm: new Date()
 	};
 
-	// console.log("OBJETO NOVO:", newGrupoSeguros);
-
     GrupoRamo.findOne({guid: guid}).then((grupoSeguros) => {
         return Object.assign(grupoSeguros, newGrupoSeguros);
     }).then((model) => {
         return model.save();
     }).then((updatedModel) => {
+		console.log(updatedModel);
 		var model = {
-			guid: updatedModel.guid,
-			codigo: updatedModel.codigo,
-			nome: updatedModel.nome,
-			apelido: updatedModel.apelido
-		};
-		
+                      guid: updatedModel.guid,
+                       codigo: updatedModel.codigo,
+                       nome: updatedModel.nome,
+                       apelido: updatedModel.apelido,
+					   criadoEm: updatedModel.criadoEm,
+					   atualizadoEm: updatedModel.atualizadoEm
+               };
+               
         res.json({
             msg: 'model updated',
             updatedModel: model
         });
+
     }).catch((err) => {
         res.send(err);
     });
